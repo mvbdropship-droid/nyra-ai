@@ -1,0 +1,28 @@
+{
+  "name": "zuri-ai-desktop",
+  "version": "1.0.0",
+  "description": "ZURI.AI desktop wrapper by Soren.AI",
+  "main": "main.cjs",
+  "author": "Soren.AI",
+  "license": "UNLICENSED",
+  "scripts": {
+    "start": "electron .",
+    "build:win": "electron-builder --win nsis",
+    "build:linux": "electron-builder --linux AppImage deb",
+    "build:mac": "electron-builder --mac dmg zip",
+    "build:all": "electron-builder --win nsis --linux AppImage deb --mac dmg zip"
+  },
+  "devDependencies": {
+    "electron": "^41.0.0",
+    "electron-builder": "^26.0.12"
+  },
+  "build": {
+    "appId": "ai.soren.zuri",
+    "productName": "ZURI.AI",
+    "directories": { "output": "dist" },
+    "files": ["index.html", "main.cjs", "preload.cjs"],
+    "win": { "target": ["nsis"] },
+    "linux": { "target": ["AppImage", "deb"], "category": "Utility" },
+    "mac": { "target": ["dmg", "zip"] }
+  }
+}

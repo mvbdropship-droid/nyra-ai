@@ -2,12 +2,14 @@ package com.nyra.ai;
 
 import android.Manifest;
 import android.content.Intent;
+import android.content.pm.PackageManager;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.provider.Settings;
 import android.view.WindowManager;
 import androidx.core.app.ActivityCompat;
+import androidx.core.content.ContextCompat;
 import com.getcapacitor.BridgeActivity;
 
 public class MainActivity extends BridgeActivity {
@@ -15,6 +17,7 @@ public class MainActivity extends BridgeActivity {
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
+        // Allow NYRA to wake and show over the lock screen when triggered
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O_MR1) {
             setShowWhenLocked(true);
             setTurnScreenOn(true);
@@ -25,6 +28,7 @@ public class MainActivity extends BridgeActivity {
             );
         }
 
+        // Request Mic, Camera, and Notification permissions on first launch
         String[] permissions = {
             Manifest.permission.RECORD_AUDIO,
             Manifest.permission.CAMERA,
@@ -32,6 +36,7 @@ public class MainActivity extends BridgeActivity {
         };
         ActivityCompat.requestPermissions(this, permissions, 101);
 
+        // Prompt "Display over other apps" for the floating NYRA orb
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && !Settings.canDrawOverlays(this)) {
             Intent intent = new Intent(
                 Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
