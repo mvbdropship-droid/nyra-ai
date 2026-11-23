@@ -7,6 +7,22 @@
 .deskhead{display:flex;justify-content:flex-end;align-items:center;padding:14px 22px 0;z-index:5}
 @media(max-width:760px){.deskhead{display:none}}
 @media(max-width:760px){.mainbody.chat-active{padding-left:16px;padding-right:16px}.mainbody.chat-active .msg{max-width:96%}.sidebar{position:fixed;left:0;top:0;bottom:0;width:270px;transform:translateX(-110%);box-shadow:0 0 60px #0008}.sidebar.open{transform:translateX(0)}.sidebar.collapsed{width:270px}.mobilehead{display:flex}.mainbody{padding:0 16px}.hero{min-height:unset;margin:auto 0}.orb{width:min(330px,72vw)}.hero h1{font-size:42px}.tagline{font-size:14px;gap:10px}.tagline i{width:35px}.bottom{padding-left:15px;padding-right:15px}.footer{font-size:12px}.version{display:none}.chatview{padding-top:12px}.msg{max-width:94%}.desktopbrand{display:none}}
+
+.deskhead{display:flex;justify-content:flex-end;align-items:center;padding:14px 22px 0;z-index:5}
+@media(max-width:760px){.deskhead{display:none}.sidebar.collapsed{transform:translateX(-110%)!important}}
+.orb.listening{box-shadow:inset 0 0 60px #ffffff66,0 0 95px #ffffff88!important;transform:scale(1.06)}
+.orb.listening:after{animation-duration:2.2s!important;border-color:#fff!important}
+.orb.speaking{box-shadow:inset 0 0 70px #38bdf866,0 0 110px #38bdf899!important;animation:orbSpeak .6s ease-in-out infinite alternate!important}
+@keyframes orbSpeak{to{transform:scale(1.09)}}
+body.light .wave{border-color:#00000022;background:linear-gradient(135deg,#0000000a,#00000000 45%,#0000000a)}
+body.light .brandZ{text-shadow:0 0 12px #00000025}
+body.light .orb{background:radial-gradient(circle at 30% 25%,#ffffff,#e5e5ea 45%,#c7c7d1 85%,#aeaeb8);border-color:#00000033;box-shadow:inset 0 0 30px #00000018,0 12px 40px #00000022}
+body.light .orb:before{border-color:#00000033}
+body.light .orb:after{border-color:#00000066}
+body.light .orb .z{background:linear-gradient(145deg,#111,#555 40%,#000 70%,#444);background-clip:text;color:transparent;filter:drop-shadow(0 2px 10px #00000030)}
+body.light .dot{background:radial-gradient(circle at 30% 25%,#444,#111);box-shadow:0 0 15px #00000044}
+body.light .inputpill{border-color:#00000033;background:#ffffffcc;box-shadow:0 8px 30px #00000012}
+body.light .send{background:#151519;color:#fff}
 </style>
 </head>
 <body><div class="app"><div class="waves"><div class="wave"></div><div class="wave"></div><div class="wave"></div></div>
@@ -54,7 +70,175 @@ function apiSettings(){openModal(`<button class="close" onclick="window.zuriClos
 async function send(){let text=prompt.value.trim();if(!text&&!attachedImage&&!attachedFile)return;let mode=modes[0];if(mode==='image'){prompt.value='';await generateImage(text||'A cinematic futuristic silver Z symbol');return}if(mode==='video'){text='Create a cinematic video concept and storyboard for: '+text}if(mode==='research'){text='Conduct structured multi-angle research, separate established facts from uncertainty, and summarize sources or verification suggestions for: '+text}if(attachedFile){text+='\n\nAttached file content:\n'+attachedFile;attachedFile=null}if(attachedImage){text+='\n\n[Image attached for visual analysis]';let img=attachedImage;attachedImage=null;addMsg('user',text);prompt.value='';startChat();let thinking=document.createElement('div');thinking.className='msg ai typing';thinking.textContent='ZURI is thinking…';chatview.appendChild(thinking);try{let answer=await apiCall(text,true,img);thinking.remove();addMsg('assistant',answer);speakMaybe(answer)}catch(e){thinking.textContent='ZURI could not connect: '+(e?.message||'unknown error')+'\nCheck endpoint, CORS, and server response.'}return}prompt.value='';startChat();addMsg('user',text);let thinking=document.createElement('div');thinking.className='msg ai typing';thinking.textContent='ZURI is thinking…';chatview.appendChild(thinking);try{let answer=await apiCall(text);thinking.remove();addMsg('assistant',answer);speakMaybe(answer)}catch(e){thinking.textContent='I could not get a reply from the AI server.\n'+(e?.message||'Unknown connection error')+'\n\nOpen API Settings from the sidebar to verify the backend endpoint.';let retry=document.createElement('button');retry.className='primary';retry.textContent='API Settings';retry.onclick=apiSettings;thinking.appendChild(document.createElement('br'));thinking.appendChild(retry);toast('AI server connection failed')}}$('#send').onclick=send;prompt.addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();send()}});
 async function generateImage(p){if(!p){toast('Describe the image first');prompt.focus();return}startChat();addMsg('user','Generate image: '+p);let el=document.createElement('div');el.className='msg ai typing';el.textContent='Creating image…';chatview.appendChild(el);try{let url='https://image.pollinations.ai/prompt/'+encodeURIComponent(p)+'?width=1024&height=1024&model=flux&nologo=true&seed='+Math.floor(Math.random()*1000000);let im=new Image();im.src=url;im.alt=p;im.onload=()=>{el.className='msg ai';el.innerHTML=`<p>Generated image</p><img src="${url}" alt="${esc(p)}"><p><a href="${url}" download="zuri-image.png" style="color:inherit">Download HD</a> · <button id="saveimg">Save to Library</button></p>`;$('#saveimg').onclick=()=>{saveLibrary({url,label:p});toast('Saved to Library')}};im.onerror=()=>{el.textContent='Image generation failed. Try another prompt.'};}catch(e){el.textContent='Generation failed.'}}
 $('#tools').querySelectorAll('[data-tool]').forEach(b=>b.onclick=()=>{tools.classList.remove('open');let x=b.dataset.tool;if(x==='chat'){modes=[];renderModes();if(!messages.length){chatview.innerHTML=''}startChat();tools.classList.remove('open');prompt.focus();}else if(x==='image'||x==='video'||x==='research')activateMode(x);else if(x==='voice')voiceStart();else if(x==='imageupload')$('#imgfile').click();else if(x==='fileupload')$('#codefile').click();else if(x==='screen')watchScreen()});$('#imgfile').onchange=async e=>{let f=e.target.files[0];if(!f)return;attachedImage=await fileData(f);prompt.placeholder='Ask about the image…';toast('Image attached')};$('#codefile').onchange=async e=>{let f=e.target.files[0];if(!f)return;attachedFile=await f.text();prompt.placeholder='Ask about the attached file…';toast('File attached: '+f.name)};function fileData(f){return new Promise(r=>{let x=new FileReader();x.onload=()=>r(x.result);x.readAsDataURL(f)})}
-function voiceStart(){let SR=window.SpeechRecognition||window.webkitSpeechRecognition;if(!SR){toast('Speech recognition is not supported in this browser');return}stopSpeech();recognition=new SR();recognition.lang='';recognition.interimResults=false;recognition.continuous=false;recognition.onstart=()=>{listening=true;orb.style.filter='brightness(1.7)';toast('Listening — speak now')};recognition.onresult=e=>{prompt.value=e.results[0][0].transcript;send()};recognition.onerror=()=>toast('Voice input stopped');recognition.onend=()=>{listening=false;orb.style.filter='';};recognition.start()}function stopSpeech(){if(window.speechSynthesis)speechSynthesis.cancel();speaking=false;if(recognition){try{recognition.stop()}catch{}recognition=null}listening=false;orb.style.filter=''}function speakMaybe(text){if(!window.speechSynthesis)return;let clean=text.replace(/```[\s\S]*?```/g,' code omitted ').replace(/<[^>]*>/g,'');let u=new SpeechSynthesisUtterance(clean);u.onstart=()=>speaking=true;u.onend=()=>speaking=false;speechSynthesis.speak(u)}
+let voiceOnlyMode = false;
+let wakeEnabled = true;
+
+function setOrbState(state) {
+  orb.classList.remove('listening', 'speaking');
+  if (state === 'listening') orb.classList.add('listening');
+  if (state === 'speaking') orb.classList.add('speaking');
+}
+
+$('#collapse').onclick = () => {
+  if (window.innerWidth <= 760) sidebar.classList.remove('open');
+  else sidebar.classList.toggle('collapsed');
+};
+
+$('#orb').onclick = () => {
+  if (speaking) {
+    stopSpeech();
+    voiceOnlyMode = true;
+    voiceStart(true);
+    return;
+  }
+  if (listening) {
+    stopSpeech();
+    toast('Voice paused');
+    return;
+  }
+  voiceOnlyMode = true;
+  voiceStart(true);
+};
+
+function startContinuousWake() {
+  let SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SR || !wakeEnabled || listening || speaking) return;
+  try {
+    recognition = new SR();
+    recognition.lang = 'en-US';
+    recognition.interimResults = true;
+    recognition.continuous = false;
+    recognition.onresult = (e) => {
+      let heard = Array.from(e.results).map(r => r.transcript).join(' ').toLowerCase();
+      if (heard.includes('hey zuri') || heard.includes('hi zuri') || heard.includes('zuri')) {
+        try { recognition.abort(); } catch (err) {}
+        voiceOnlyMode = true;
+        setOrbState('listening');
+        toast('ZURI is listening...');
+        let after = heard.split(/hey zuri|hi zuri|zuri/).pop().trim();
+        let lastRes = e.results[e.results.length - 1];
+        if (after.length > 3 && lastRes && lastRes.isFinal) {
+          handleVoiceQuery(after);
+        } else {
+          setTimeout(() => voiceStart(true), 250);
+        }
+      }
+    };
+    recognition.onend = () => {
+      if (wakeEnabled && !listening && !speaking) setTimeout(startContinuousWake, 450);
+    };
+    recognition.start();
+  } catch (err) {}
+}
+
+function voiceStart(stayOnOrb) {
+  if (stayOnOrb === undefined) stayOnOrb = true;
+  let SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SR) { toast('Speech recognition not supported here'); return; }
+  stopSpeech();
+  voiceOnlyMode = stayOnOrb;
+  recognition = new SR();
+  recognition.lang = '';
+  recognition.interimResults = true;
+  recognition.continuous = false;
+  recognition.onstart = () => {
+    listening = true;
+    setOrbState('listening');
+    toast('Listening — speak now');
+  };
+  recognition.onresult = (e) => {
+    let last = e.results[e.results.length - 1];
+    if (last && last.isFinal && last[0].transcript.trim()) {
+      listening = false;
+      setOrbState('');
+      handleVoiceQuery(last[0].transcript.trim());
+    }
+  };
+  recognition.onerror = () => {
+    listening = false;
+    setOrbState('');
+    if (wakeEnabled) setTimeout(startContinuousWake, 500);
+  };
+  recognition.onend = () => {
+    listening = false;
+    if (!speaking) setOrbState('');
+  };
+  recognition.start();
+}
+
+async function handleVoiceQuery(text) {
+  messages.push({ role: 'user', content: text });
+  saveThread();
+  setOrbState('listening');
+  try {
+    let answer = await apiCall(text);
+    messages.push({ role: 'assistant', content: answer });
+    saveThread();
+    if (!voiceOnlyMode) {
+      startChat();
+      renderMessage({ role: 'user', content: text });
+      renderMessage({ role: 'assistant', content: answer });
+    }
+    speakMaybe(answer, true);
+  } catch (err) {
+    setOrbState('');
+    toast('Error: ' + (err && err.message ? err.message : 'Check connection'));
+    if (wakeEnabled) setTimeout(startContinuousWake, 800);
+  }
+}
+
+function stopSpeech() {
+  if (window.speechSynthesis) speechSynthesis.cancel();
+  speaking = false;
+  if (recognition) { try { recognition.abort(); } catch (err) {} recognition = null; }
+  listening = false;
+  setOrbState('');
+}
+
+function speakMaybe(text, autoFollowUp) {
+  if (!window.speechSynthesis) return;
+  speechSynthesis.cancel();
+  let clean = text.replace(/```[\s\S]*?```/g, ' code omitted ').replace(/<[^>]*>/g, '').trim();
+  if (!clean) return;
+  let u = new SpeechSynthesisUtterance(clean);
+  u.onstart = () => {
+    speaking = true;
+    setOrbState('speaking');
+    startBargeInDetector();
+  };
+  u.onend = () => {
+    speaking = false;
+    setOrbState('');
+    if (autoFollowUp && voiceOnlyMode) {
+      setTimeout(() => voiceStart(true), 300);
+    } else if (wakeEnabled) {
+      setTimeout(startContinuousWake, 400);
+    }
+  };
+  speechSynthesis.speak(u);
+}
+
+function startBargeInDetector() {
+  let SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SR || !speaking) return;
+  try {
+    let barge = new SR();
+    barge.lang = 'en-US';
+    barge.interimResults = true;
+    barge.onresult = (e) => {
+      let last = e.results[e.results.length - 1];
+      let spoken = last ? last[0].transcript.trim() : '';
+      if (spoken.length > 1 && speaking) {
+        barge.abort();
+        stopSpeech();
+        voiceStart(true);
+      }
+    };
+    barge.start();
+  } catch (err) {}
+}
+
+window.addEventListener('load', () => setTimeout(startContinuousWake, 600));
 async function watchScreen(){if(!navigator.mediaDevices?.getDisplayMedia){toast('Screen capture is unavailable on this browser');return}try{screenStream=await navigator.mediaDevices.getDisplayMedia({video:true,audio:false});showPanel('Screen mentor session',`<p>Screen sharing is active. Stop sharing from the browser's capture controls when finished.</p><div class="screenpreview"><video id="screenvideo" autoplay muted></video></div><textarea id="screenquestion" placeholder="What would you like ZURI to help you understand on screen?"></textarea><button class="primary" id="screenask">Ask about my screen</button>`);$('#screenvideo').srcObject=screenStream;$('#screenask').onclick=async()=>{let q=$('#screenquestion').value;closeModal();toast('Screen mentor is a prototype; visual frame forwarding is not configured in this demo.')};screenStream.getVideoTracks()[0].onended=()=>{screenStream=null;toast('Screen sharing ended')}}catch(e){toast('Screen share cancelled')}}
 sidebar.querySelectorAll('[data-action]').forEach(b=>b.onclick=()=>{let a=b.dataset.action;sidebar.querySelectorAll('.navbtn').forEach(x=>x.classList.remove('active'));b.classList.add('active');if(a==='new')newChat();if(a==='past')$('#history').style.display=$('#history').style.display==='block'?'none':'block';if(a==='library')library();if(a==='explore')explore();if(a==='about')about();if(a==='api')apiSettings();if(a==='pro')showPanel('ZURI.AI Pro',`<p>Pro plans and billing are not connected in this prototype.</p><p>Production subscription checkout should be implemented through a trusted payment provider.</p>`)});$('#history').style.display='none';renderHistory();window.zuriApiSettings=apiSettings;
 })();
